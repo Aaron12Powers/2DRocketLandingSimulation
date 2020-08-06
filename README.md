@@ -1,2 +1,2 @@
-# A* Visualizer
-A Simple PyGame Visualizer for the Famous A* Pathfinding Algorithm
+# 2D Rocket Landing Simulation
+A Simple PyGame Simulation made to represent SpaceX Rocket Thrusters landing Process
