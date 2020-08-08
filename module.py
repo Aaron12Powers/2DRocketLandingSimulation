@@ -10,6 +10,8 @@ GREEN = (0,128,0)
 BLUE = (0, 0, 255)
 LIGHT_BLUE = (135,206,250)
 
+TERMINAL_VELOCITY = 40
+
 class thruster(object):
     def __init__(self, isEnabled, flameColor, boosterColor):
         self.isEnabled = False
@@ -17,13 +19,13 @@ class thruster(object):
         self.boosterColor = boosterColor
 
 class rocket(object):
-    def __init__(self, column, row):
+    def __init__(self, column, row, rotation):
         #centerpoints
         self.column = column
         self.row = row
 
         #radians
-        self.rotation = 0
+        self.rotation = rotation
         self.color = WHITE
         self.rocketThruster = thruster(True, RED, LIGHT_GREY)
         self.velocity = 0
@@ -34,9 +36,6 @@ class rocket(object):
         print('test')
 
 def DrawBackground(pygame, screen, columns, rows):
-    # for i in range(columns):
-    #     for j in range(rows):
-    #         if j <= rows - (rows / 10):
     screen.fill(LIGHT_BLUE)
     pygame.draw.rect(screen, GREEN, [0, rows, columns, -rows/8])
     pygame.draw.rect(screen, GREY, [(columns / 2) - (columns / 8), rows - (rows/8 - rows/64), columns/4, -rows/64])
@@ -47,72 +46,72 @@ def DrawRocket(pygame, screen, columns, rows, rocket):
 
     #maximum size rocket can be. only area needed to calculate for
     squareSize = math.sqrt((width * width) + (height * height))
-    #replace with rotatable rectangle code
-    # pygame.draw.rect(screen, rocket.color, [rocket.column - width/2, rocket.row-height/2, width, height])
-    
-    # pygame.draw.rect(screen, rocket.color, [rocket.column - (squareSize / 2), (rocket.row - (squareSize / 2)), squareSize, squareSize])
-    
-    corners = getCorners(screen,rocket, width, height)
+    (corners, thrusterCorners) = getCorners(screen,rocket, width, height)
     slopes = []
     intercepts = []
 
+    
 
     getSlopeIntercepts(corners, slopes, intercepts)
-
-    DrawRocketMain(screen, rocket, squareSize, corners, slopes, intercepts)
-
+    DrawRocketMain(screen, rocket, squareSize, corners, slopes, intercepts, rocket.color)
     
-                                
+    if rocket.rocketThruster.isEnabled:
+        intercepts = []
+        getSlopeIntercepts(thrusterCorners, slopes, intercepts)
+        DrawRocketMain(screen, rocket, squareSize + 45, thrusterCorners, slopes, intercepts, RED)
+    
+                            
+    if rocket.rocketThruster.isEnabled and rocket.row + height <= rows - rows/16:
+        if rocket.velocity > 0:
+            rocket.row += rocket.velocity / 5
 
-
-
-    #replace with rotatable thruster
-    #pygame.draw.rect(screen, rocket.rocketThruster.boosterColor, [rocket.column +  width/4, rocket.row + height - height/4 + 1, width/2, height/4])
-    if rocket.rocketThruster.isEnabled and rocket.row + height <= rows - rows/8:
-        rocket.row = rocket.row + rocket.timeThrusting / 5
-        pygame.draw.rect(screen, rocket.rocketThruster.flameColor, [rocket.column - width/2, (rocket.row + rows/8) - height/2, columns/30, rows/32])
-
-        rocket.row = rocket.row + rocket.velocity / 5
-
-        # if rocket.velocity > 0:
-        #     columnChange = rocket.rotation
-        #     rowChange = rocket.rotation
-        #     rocket.column = rocket.column + (columnChange * (rocket.velocity / 5))
-        #     rocket.row = rocket.row + (rowChange * (rocket.velocity / 5))
-        
-        if abs(rocket.velocity) <= 100: 
+        else:
+            rocket.column += math.sin(rocket.rotation + math.pi) * rocket.velocity / 5
+            rocket.row -= math.cos(rocket.rotation + math.pi) * rocket.velocity / 5
+    
+        if rocket.velocity >= -1 * TERMINAL_VELOCITY: 
             rocket.velocity -= 1
             rocket.timeFalling = 0
         
-    elif not rocket.rocketThruster.isEnabled and rocket.row + height <= rows - rows/8:
-        rocket.row = rocket.row + rocket.velocity / 5
-        if abs(rocket.velocity) <= 100: 
+    elif not rocket.rocketThruster.isEnabled and rocket.row + height <= rows - rows/16:
+        if rocket.velocity <= TERMINAL_VELOCITY: 
             rocket.velocity += 1
-            rocket.timeThrusting = 0
+        rocket.column -= abs(math.sin(rocket.rotation + math.pi)) * rocket.velocity / 10
+        # fall should be more or less constant fo gravity
+        rocket.row += rocket.velocity / 5
+
+        # else:
+        #     rocket.row += TERMINAL_VELOCITY / 5
+        
         
 
-    elif rocket.row + height >= rows - rows/8 and rocket.column >= columns / 4 and rocket.column <= columns - columns / 4 and rocket.velocity <= 25:
+        
+
+        
+
+    elif rocket.row + height >= rows - rows/8 and rocket.column >= columns / 4 and rocket.column <= columns - columns / 4 and rocket.velocity <= 25 and (rocket.rotation < math.pi / 4 or rocket.rotation > (2 * math.pi) - (math.pi / 4)):
         rocket.color = GREEN
-        # print(rocket.velocity)
-        # print('Velocity at Land: ', rocket.velocity)
-        # print('Target column: ', columns / 4)
-        # print('Actual column: ', rocket.column)
-        # print('Pogu You survived')
+        print(rocket.velocity)
+        print('Velocity at Land: ', rocket.velocity)
+        print('Target column: ', columns / 4)
+        print('Actual column: ', rocket.column)
+        print('You Survived')
 
 
     else:
         rocket.color = RED
-        # if rocket.velocity > 25:
-        #     print('Velocity at Land: ', rocket.velocity)
-        #     print('Came in too hot')
-        # if rocket.column < columns / 4 or rocket.column > columns - columns / 4:
-        #     print('Aim for the Pad!')
-        # print('yerdeadmate')
+        if rocket.velocity > 25:
+            print('Velocity at Land: ', rocket.velocity)
+            print('Came in too hot')
+        if rocket.column < columns / 4 or rocket.column > columns - columns / 4:
+            print('Aim for the Pad!')
+        print('Failed')
 
 
 def getCorners(screen,rocket, width, height):
 
     corners = []
+    thrusterCorners = []
 
     #corner1
     tempX = rocket.column - (width / 2) - rocket.column
@@ -120,7 +119,7 @@ def getCorners(screen,rocket, width, height):
     rotatedX = tempX*math.cos(rocket.rotation) - tempY*math.sin(rocket.rotation)
     rotatedY = tempX*math.sin(rocket.rotation) + tempY*math.cos(rocket.rotation)
     corners.extend([(rotatedX + rocket.column, rotatedY + rocket.row)])
-    screen.set_at((int(rotatedX + rocket.column), int(rotatedY + rocket.row)), RED)
+    # screen.set_at((int(rotatedX + rocket.column), int(rotatedY + rocket.row)), GREEN)
     
     #corner 2
     tempX = rocket.column + (width / 2) - rocket.column
@@ -128,7 +127,7 @@ def getCorners(screen,rocket, width, height):
     rotatedX = tempX*math.cos(rocket.rotation) - tempY*math.sin(rocket.rotation)
     rotatedY = tempX*math.sin(rocket.rotation) + tempY*math.cos(rocket.rotation)
     corners.extend([(rotatedX + rocket.column, rotatedY + rocket.row)])
-    screen.set_at((int(rotatedX + rocket.column), int(rotatedY + rocket.row)), RED)
+    # screen.set_at((int(rotatedX + rocket.column), int(rotatedY + rocket.row)), GREEN)
 
     #corner 3
     tempX = rocket.column - (width / 2) - rocket.column
@@ -136,7 +135,7 @@ def getCorners(screen,rocket, width, height):
     rotatedX = tempX*math.cos(rocket.rotation) - tempY*math.sin(rocket.rotation)
     rotatedY = tempX*math.sin(rocket.rotation) + tempY*math.cos(rocket.rotation)
     corners.extend([(rotatedX + rocket.column, rotatedY + rocket.row)])
-    screen.set_at((int(rotatedX + rocket.column), int(rotatedY + rocket.row)), RED)
+    # screen.set_at((int(rotatedX + rocket.column), int(rotatedY + rocket.row)), RED)
 
     #corner 4
     tempX = rocket.column + (width / 2) - rocket.column
@@ -144,21 +143,38 @@ def getCorners(screen,rocket, width, height):
     rotatedX = tempX*math.cos(rocket.rotation) - tempY*math.sin(rocket.rotation)
     rotatedY = tempX*math.sin(rocket.rotation) + tempY*math.cos(rocket.rotation)
     corners.extend([(rotatedX + rocket.column, rotatedY + rocket.row)])
-    screen.set_at((int(rotatedX + rocket.column), int(rotatedY + rocket.row)), RED)
+    # screen.set_at((int(rotatedX + rocket.column), int(rotatedY + rocket.row)), RED)
 
-    return corners
+    thrusterCorners.append((corners[2][0], corners[2][1]))
+    thrusterCorners.append((corners[3][0], corners[3][1]))
+
+    tempX = rocket.column - (width / 2) - rocket.column
+    tempY = rocket.row + ((40 + height) / 2) - rocket.row
+    rotatedX = tempX*math.cos(rocket.rotation) - tempY*math.sin(rocket.rotation)
+    rotatedY = tempX*math.sin(rocket.rotation) + tempY*math.cos(rocket.rotation)
+    thrusterCorners.extend([(rotatedX + rocket.column, rotatedY + rocket.row)])
+
+    tempX = rocket.column + (width / 2) - rocket.column
+    tempY = rocket.row + ((40 + height) / 2) - rocket.row
+    rotatedX = tempX*math.cos(rocket.rotation) - tempY*math.sin(rocket.rotation)
+    rotatedY = tempX*math.sin(rocket.rotation) + tempY*math.cos(rocket.rotation)
+    thrusterCorners.extend([(rotatedX + rocket.column, rotatedY + rocket.row)])
+
+
+
+    return (corners, thrusterCorners)
 
 def getSlopeIntercepts(corners, slopes, intercepts):
     try:
         slopes.extend([(corners[0][1] - corners[1][1]) / (corners[0][0] - corners[1][0])])
     except:
-        slopes.extend([2147483647])
+        slopes.extend([99999])
     intercepts.extend([-1 * ((slopes[0] * corners[0][0]) - corners[0][1])])
 
     try:
         slopes.extend([(corners[1][1] - corners[3][1]) / (corners[1][0] - corners[3][0])])
     except:
-        slopes.extend([-2147483647])
+        slopes.extend([-99999])
     intercepts.extend([-1 * ((slopes[1] * corners[1][0]) - corners[1][1])])
 
     try:
@@ -173,7 +189,7 @@ def getSlopeIntercepts(corners, slopes, intercepts):
         slopes.extend([-2147483647])
     intercepts.extend([-1 * ((slopes[3] * corners[0][0]) - corners[0][1])])
 
-def DrawRocketMain(screen, rocket, squareSize, corners, slopes, intercepts):
+def DrawRocketMain(screen, rocket, squareSize, corners, slopes, intercepts, color):
     for i in range(int(rocket.column - (squareSize/2)), int(rocket.column + (squareSize/2))):
         for j in range(int(rocket.row - (squareSize/2)), int(rocket.row + (squareSize/2))):
             if rocket.rotation <= math.pi / 2 and rocket.rotation >= 0:
@@ -185,9 +201,10 @@ def DrawRocketMain(screen, rocket, squareSize, corners, slopes, intercepts):
                         if temp > j:
                             temp = slopes[3] * i + intercepts[3]
                             if temp < j:
-                                screen.set_at((int(i), int(j)), rocket.color) 
+                                screen.set_at((int(i), int(j)), color)
+                                
 
-            elif rocket.rotation <= math.pi:
+            elif rocket.rotation <= math.pi and rocket.rotation >= 0:
                 temp = slopes[0] * i + intercepts[0]
                 if temp > j:
                     temp = slopes[1] * i + intercepts[1]
@@ -196,9 +213,9 @@ def DrawRocketMain(screen, rocket, squareSize, corners, slopes, intercepts):
                         if temp < j:
                             temp = slopes[3] * i + intercepts[3]
                             if temp < j:
-                                screen.set_at((int(i), int(j)), rocket.color)
-
-            elif rocket.rotation <= math.pi + (math.pi / 2):
+                                screen.set_at((int(i), int(j)), color)
+                                
+            elif rocket.rotation <= math.pi + (math.pi / 2) and rocket.rotation >= 0:
                 temp = slopes[0] * i + intercepts[0]
                 if temp > j:
                     temp = slopes[1] * i + intercepts[1]
@@ -207,7 +224,8 @@ def DrawRocketMain(screen, rocket, squareSize, corners, slopes, intercepts):
                         if temp < j:
                             temp = slopes[3] * i + intercepts[3]
                             if temp > j:
-                                screen.set_at((int(i), int(j)), rocket.color)                              
+                                screen.set_at((int(i), int(j)), color)                              
+                                
 
             else:
                 temp = slopes[0] * i + intercepts[0]
@@ -218,4 +236,5 @@ def DrawRocketMain(screen, rocket, squareSize, corners, slopes, intercepts):
                         if temp > j:
                             temp = slopes[3] * i + intercepts[3]
                             if temp > j:
-                                screen.set_at((int(i), int(j)), rocket.color)    
+                                screen.set_at((int(i), int(j)), color) 
+                                

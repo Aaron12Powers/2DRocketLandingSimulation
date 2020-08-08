@@ -1,6 +1,6 @@
 from pygame.locals import *
 import numpy as np
-from random import randint
+import random
 import pygame
 import math
 import module
@@ -10,11 +10,12 @@ randomize = False
 
 
 #Define Window Size in px
-COLUMNS = 700
+COLUMNS = 900
 ROWS = COLUMNS
 #Define Rocket Start and Angle. 0 = straight up
 startRow = 100
-startColumn = 150
+startColumn = 590
+
 
 
 #Define Colors
@@ -35,8 +36,7 @@ screen = pygame.display.set_mode((COLUMNS, ROWS))
 
 pygame.display.set_caption('RocketSim')
 
-if randomize:
-    print('randomizing')
+
 
 
 grid = []
@@ -59,7 +59,11 @@ step = 0
 pause = True
 complete = False
 
-rocket = module.rocket(startColumn, startRow)
+if randomize:
+    print('randomizing')
+    rocket = module.rocket(random.randint(0, COLUMNS), random.randint(0, ROWS), random.uniform(0, math.pi * 2))
+else:
+    rocket = module.rocket(startColumn, startRow, 0)
 
 currentCoords = []
 
@@ -78,9 +82,12 @@ while running:
                 pygame.display.set_caption('RocketSim')
                 pause = False
             else:
-                pygame.display.set_caption('RocketSim - PAUSED')
-                rocket = module.rocket(startColumn, startRow)
-                pause = True 
+                if not randomize:
+                    pygame.display.set_caption('RocketSim - PAUSED')
+                    rocket = module.rocket(startColumn, startRow, 0)
+                    pause = True 
+                else:
+                    rocket = module.rocket(random.randint(0, COLUMNS), random.randint(0, ROWS), random.uniform(0, math.pi * 2))
 
         elif key[pygame.K_SPACE]:
             if rocket.rocketThruster.isEnabled:
@@ -91,17 +98,15 @@ while running:
                 print('Thruster ON')
 
         elif key[pygame.K_RIGHT]:
-            rocket.rotation += .05
+            rocket.rotation += .2
             if rocket.rotation >= math.pi * 2:
                 rocket.rotation = rocket.rotation - (math.pi * 2)
-            print('Rotation: ' , rocket.rotation)
             rocket.rightThrust = True
 
         elif key[pygame.K_LEFT]:
-            rocket.rotation -= .05
+            rocket.rotation -= .2
             if rocket.rotation < 0:
-                rocket.rotation = (2 * math.pi) - rocket.rotation            
-                print(rocket.rotation)
+                rocket.rotation = (2 * math.pi) + rocket.rotation            
             rocket.leftThrust = True
 
 
@@ -115,7 +120,7 @@ while running:
             elif event.button == 2:
                 pos = pygame.mouse.get_pos()
 
-            # If Center Click Set Start
+            # If Center Click Set St
             elif event.button == 3:
                 pos = pygame.mouse.get_pos()
 
@@ -136,5 +141,6 @@ while running:
 
     tick_count += 1
     clock.tick(60)
+
    
     pygame.display.flip()
