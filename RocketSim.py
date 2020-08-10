@@ -8,7 +8,6 @@ import module
 
 randomize = False
 
-
 #Define Window Size in px
 COLUMNS = 900
 ROWS = COLUMNS

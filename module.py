@@ -55,6 +55,8 @@ def DrawRocket(pygame, screen, columns, rows, rocket):
     getSlopeIntercepts(corners, slopes, intercepts)
     DrawRocketMain(screen, rocket, squareSize, corners, slopes, intercepts, rocket.color)
     
+    print(rocket.velocity)
+
     if rocket.rocketThruster.isEnabled:
         intercepts = []
         getSlopeIntercepts(thrusterCorners, slopes, intercepts)
@@ -74,11 +76,22 @@ def DrawRocket(pygame, screen, columns, rows, rocket):
             rocket.timeFalling = 0
         
     elif not rocket.rocketThruster.isEnabled and rocket.row + height <= rows - rows/16:
+        print(rocket.velocity)
         if rocket.velocity <= TERMINAL_VELOCITY: 
             rocket.velocity += 1
-        rocket.column -= abs(math.sin(rocket.rotation + math.pi)) * rocket.velocity / 10
-        # fall should be more or less constant fo gravity
-        rocket.row += rocket.velocity / 5
+        
+        if rocket.velocity > 0:
+            print('NUM1')
+            rocket.column -= abs(math.sin(rocket.rotation + math.pi)) * rocket.velocity / 10
+            # fall should be more or less constant fo gravity
+            rocket.row += rocket.velocity / 5
+        
+        else:
+            print('NUM2')
+            rocket.column += math.sin(rocket.rotation + math.pi) * rocket.velocity / 10
+            # fall should be more or less constant fo gravity
+            rocket.row -= math.cos(rocket.rotation + math.pi) * rocket.velocity / 10
+
 
         # else:
         #     rocket.row += TERMINAL_VELOCITY / 5
@@ -106,7 +119,6 @@ def DrawRocket(pygame, screen, columns, rows, rocket):
         if rocket.column < columns / 4 or rocket.column > columns - columns / 4:
             print('Aim for the Pad!')
         print('Failed')
-
 
 def getCorners(screen,rocket, width, height):
 
