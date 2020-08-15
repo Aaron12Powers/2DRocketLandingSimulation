@@ -3,7 +3,7 @@ import numpy as np
 import random
 import pygame
 import math
-import module
+import moduleTEST as module
 
 
 randomize = False
@@ -13,7 +13,9 @@ COLUMNS = 750
 ROWS = 1000
 #Define Rocket Start and Angle. 0 = straight up
 startRow = 100
-startColumn = 590
+startColumn = 375
+
+
 
 
 
@@ -96,21 +98,21 @@ while running:
                 rocket.rocketThruster.isEnabled = True
                 print('Thruster ON')
 
-        elif key[pygame.K_RIGHT]:
-            rocket.rotation += .2
-            if rocket.rotation >= math.pi * 2:
-                rocket.rotation = rocket.rotation - (math.pi * 2)
-            rocket.rightThrust = True
+    if key[pygame.K_RIGHT]:
+        rocket.rotation += .02
+        if rocket.rotation >= math.pi * 2:
+            rocket.rotation = rocket.rotation - (math.pi * 2)
+        rocket.rightThrust = True
 
-        elif key[pygame.K_LEFT]:
-            rocket.rotation -= .2
-            if rocket.rotation < 0:
-                rocket.rotation = (2 * math.pi) + rocket.rotation            
-            rocket.leftThrust = True
+    if key[pygame.K_LEFT]:
+        rocket.rotation -= .02
+        if rocket.rotation < 0:
+            rocket.rotation = (2 * math.pi) + rocket.rotation            
+        rocket.leftThrust = True
 
 
 
-        elif event.type == pygame.MOUSEBUTTONDOWN and pause:
+        if event.type == pygame.MOUSEBUTTONDOWN and pause:
             # If Left Click Make wall
             if event.button == 1:
                 pos = pygame.mouse.get_pos()
@@ -135,7 +137,6 @@ while running:
         module.DrawBackground(pygame, screen, COLUMNS, ROWS)  
         module.DrawRocket(pygame, screen, COLUMNS, ROWS, rocket)
 
-  
 
 
     tick_count += 1

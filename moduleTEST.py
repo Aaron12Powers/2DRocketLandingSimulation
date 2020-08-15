@@ -1,5 +1,14 @@
 import random
 import math
+from pygame.locals import *
+import pygame
+
+rocket_img = pygame.image.load('Assets/rocket.png')
+rocket_thrusting_img = pygame.image.load('Assets/rocketThrusting.png')
+rocket_success_img = pygame.image.load('Assets/rocketSuccess.png')
+rocket_fail_img = pygame.image.load('Assets/rocketFail.png')
+rocket_flipped = pygame.transform.flip(rocket_img, False, False)
+
 
 WHITE = (255, 255, 255)
 LIGHT_GREY = (155, 155, 155)
@@ -52,16 +61,21 @@ def DrawRocket(pygame, screen, columns, rows, rocket):
 
     
 
-    getSlopeIntercepts(corners, slopes, intercepts)
-    DrawRocketMain(screen, rocket, squareSize, corners, slopes, intercepts, rocket.color)
     
+
+    # getSlopeIntercepts(corners, slopes, intercepts)
+    # DrawRocketMain(screen, rocket, squareSize, corners, slopes, intercepts, rocket.color)
+    
+
+
     print(rocket.velocity)
 
     if rocket.rocketThruster.isEnabled:
         intercepts = []
         getSlopeIntercepts(thrusterCorners, slopes, intercepts)
-        DrawRocketMain(screen, rocket, squareSize + 45, thrusterCorners, slopes, intercepts, RED)
+        screen.blit(pygame.transform.rotate(rocket_thrusting_img, rocket.rotation * -57.2958), (rocket.column - width/2, rocket.row - height / 2))
     
+
                             
     if rocket.rocketThruster.isEnabled and rocket.row + height <= rows - rows/16:
         if rocket.velocity > 0:
@@ -77,6 +91,7 @@ def DrawRocket(pygame, screen, columns, rows, rocket):
         
     elif not rocket.rocketThruster.isEnabled and rocket.row + height <= rows - rows/16:
         print(rocket.velocity)
+        screen.blit(pygame.transform.rotate(rocket_img, rocket.rotation * -57.2958), (rocket.column - width/2, rocket.row - height / 2))
         if rocket.velocity <= TERMINAL_VELOCITY: 
             rocket.velocity += 1
         
@@ -93,18 +108,10 @@ def DrawRocket(pygame, screen, columns, rows, rocket):
             rocket.row -= math.cos(rocket.rotation + math.pi) * rocket.velocity / 10
 
 
-        # else:
-        #     rocket.row += TERMINAL_VELOCITY / 5
-        
-        
-
-        
-
-        
-
-    elif rocket.row + height >= rows - rows/8 and rocket.column >= columns / 4 and rocket.column <= columns - columns * 3 / 8 and rocket.velocity <= 25 and (rocket.rotation < math.pi / 4 or rocket.rotation > (2 * math.pi) - (math.pi / 4)):
+    elif rocket.row + height >= rows - rows/8 and rocket.column >= columns / 4 and rocket.column <= columns - columns * 3 / 8 and rocket.velocity <= 25 and (rocket.rotation < math.pi / 16 or rocket.rotation > (2 * math.pi) - (math.pi / 16)):
         rocket.color = GREEN
         rocket.rocketThruster.isEnabled = False
+        screen.blit(pygame.transform.rotate(rocket_success_img, rocket.rotation * -57.2958), (rocket.column - width/2, rocket.row - height / 2))
         print(rocket.velocity)
         print('Velocity at Land: ', rocket.velocity)
         print('Target column: ', columns / 4)
@@ -115,6 +122,7 @@ def DrawRocket(pygame, screen, columns, rows, rocket):
     else:
         rocket.color = RED
         rocket.rocketThruster.isEnabled = False
+        screen.blit(pygame.transform.rotate(rocket_fail_img, rocket.rotation * -57.2958), (rocket.column - width/2, rocket.row - height / 2))
         if rocket.velocity > 25:
             print('Velocity at Land: ', rocket.velocity)
             print('Came in too hot')
